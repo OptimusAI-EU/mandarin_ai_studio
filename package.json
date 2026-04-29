@@ -1,0 +1,41 @@
+{
+  "name": "open-video-studio",
+  "version": "0.1.0",
+  "description": "A local-first studio for generating and comparing AI videos through OpenRouter video models.",
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "concurrently \"npm:server:dev\" \"npm:client:dev\"",
+    "client:dev": "vite --host 127.0.0.1 --port 5173",
+    "server:dev": "node --watch server/index.js",
+    "build": "tsc -b && vite build",
+    "check": "npm run build",
+    "start": "node server/index.js"
+  },
+  "keywords": [
+    "openrouter",
+    "video-generation",
+    "ai-video",
+    "local-first",
+    "react",
+    "sqlite"
+  ],
+  "dependencies": {
+    "express": "^5.1.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "@types/node": "^24.5.2",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

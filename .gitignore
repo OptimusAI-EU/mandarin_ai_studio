@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.ovstudio/
+.ovstudio-server.*.log
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+npm-debug.log*
+*.mp4
+*.webm
+*.mov
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
