@@ -250,6 +250,7 @@ function App() {
       const fresh = await api.request<Session>('/api/sessions/' + sess.id);
       setModality(fresh.modality as Modality);
       upd({ currentSession: fresh, chatMsgs: fresh.messages, selectedModel: fresh.model, previewContent: null });
+      setTab('chat');
     } catch (e) { upd({ message: getErr(e) }); }
   }
 
@@ -304,8 +305,11 @@ function App() {
     for (let i = msgs.length - 1; i >= 0; i--) { if (msgs[i].role === 'user') { lastUserIdx = i; break; } }
     if (lastUserIdx < 0) return;
     const userMsg = msgs[lastUserIdx];
-    upd({ chatMsgs: msgs.slice(0, lastUserIdx + 1), prompt: userMsg.content });
-    setTimeout(() => void handleSend(), 100);
+    // Remove the last assistant message and set up for regeneration
+    const trimmedMsgs = msgs.slice(0, lastUserIdx + 1);
+    upd({ chatMsgs: trimmedMsgs, prompt: userMsg.content, busy: false });
+    // Use a longer timeout to ensure state is updated before sending
+    setTimeout(() => { void handleSend(); }, 200);
   }
 
   async function handleUploadFile(file: File) {
