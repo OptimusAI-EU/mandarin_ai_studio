@@ -193,8 +193,14 @@ function App() {
   }
 
   function handleSelectModel(m: Model) {
-    upd({ selectedModel: m.id, showModelPicker: false });
+    const modelModality = (m.modality || 'text') as Modality;
+    // Set the selected model for the model's own modality category, not the current one
+    getChat(modelModality).selectedModel = m.id;
+    // Switch to that modality's chat page so the user sees the correct module
+    setModality(modelModality);
+    setTab('chat');
     setModelModal(null);
+    forceRender();
   }
 
   async function handleNewSession() {
