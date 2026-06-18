@@ -486,8 +486,11 @@ function App() {
           <div><h1>Models</h1><p>{models.length} models from OpenRouter</p></div>
           <button className='primary' onClick={syncModels} disabled={getChat(modality).busy}>{getChat(modality).busy ? <><Loader2 size={14} className='spin' /> Syncing...</> : <><RefreshCcw size={14} /> Sync All</>}</button>
         </div>
+        <div className='models-search-bar'>
+          <SearchIcon size={18} />
+          <input value={modelsSearch} onChange={e => setModelsSearch(e.target.value)} placeholder='Search models by name, id, or description...' />
+        </div>
         <div className='toolbar'>
-          <div className='search'><SearchIcon size={14} /><input value={modelsSearch} onChange={e => setModelsSearch(e.target.value)} placeholder='Search models...' /></div>
           <select value={modelsFilter} onChange={e => setModelsFilter(e.target.value)}>{ALL_CATS.map(c => <option key={c.key} value={c.key}>{c.label}{c.key !== 'all' ? ' (' + (grouped[c.key]?.length || 0) + ')' : ''}</option>)}</select>
         </div>
         {Object.keys(grouped).length === 0 && <Empty icon={<LayoutGrid size={28} />} title='No models' text='Click Sync All to fetch models.' />}
