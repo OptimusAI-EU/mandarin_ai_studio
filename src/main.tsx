@@ -300,31 +300,27 @@ function App() {
   }
 
   async function handleRegenerate() {
-    const msgs = getChat(modality).chatMsgs;
-    // Find the last user message
-    let lastUserIdx = -1;
-    for (let i = msgs.length - 1; i >= 0; i--) { if (msgs[i].role === 'user') { lastUserIdx = i; break; } }
-    if (lastUserIdx < 0) return;
-    const userMsg = msgs[lastUserIdx];
-    const curPrompt = userMsg.content;
-    const curAtt = userMsg.attachments || [];
-    const model = getChat(modality).selectedModel;
-    if (!model) { upd({ message: 'Select a model first.' }); return; }
+    try {
+      const msgs = getChat(modality).chatMsgs;
+      let lastUserIdx = -1;
+      for (let i = msgs.length - 1; i >= 0; i--) { if (msgs[i].role === 'user') { lastUserIdx = i; break; } }
+      if (lastUserIdx < 0) return;
+      const userMsg = msgs[lastUserIdx];
+      const curPrompt = userMsg.content;
+      const curAtt = userMsg.attachments || [];
+      const model = getChat(modality).selectedModel;
+      if (!model) { upd({ message: 'Select a model first.' }); return; }
 
-    // Trim messages to remove previous assistant response
-    const trimmedMsgs = msgs.slice(0, lastUserIdx + 1);
-    upd({ chatMsgs: trimmedMsgs, prompt: curPrompt, attachments: curAtt, busy: true });
+      const trimmedMsgs = msgs.slice(0, lastUserIdx + 1);
+      upd({ chatMsgs: trimmedMsgs, prompt: curPrompt, attachments: curAtt, busy: true });
 
-    let session = getChat(modality).currentSession;
-    if (!session) {
-      try {
+      let session = getChat(modality).currentSession;
+      if (!session) {
         session = await api.request<Session>('/api/sessions', { method: 'POST', body: JSON.stringify({ modality, model, title: curPrompt.slice(0, 50) }) });
         setSessions(prev => [session!, ...prev]);
         upd({ currentSession: session });
-      } catch (e) { upd({ message: getErr(e), busy: false }); return; }
-    }
+      }
 
-    try {
       const body: any = { model, prompt: curPrompt, session_id: session.id };
       if (curAtt.length > 0) body.images = curAtt;
       await api.request<any>('/api/generate/' + modality, { method: 'POST', body: JSON.stringify(body) });
@@ -332,7 +328,8 @@ function App() {
       setSessions(prev => prev.map(s => s.id === updated.id ? updated : s));
       upd({ currentSession: updated, chatMsgs: updated.messages, busy: false, message: 'Done.' });
     } catch (e) {
-      upd({ message: getErr(e), chatMsgs: [...getChat(modality).chatMsgs, { id: 'err_' + Date.now(), role: 'assistant', content: 'Error: ' + getErr(e), timestamp: new Date().toISOString() }], busy: false });
+      console.error('Regenerate error:', e);
+      upd({ message: 'Regenerate failed: ' + getErr(e), busy: false });
     }
   }
 
@@ -406,7 +403,7 @@ function App() {
                       <span className='time'>{fmtTime(msg.timestamp)}</span>
                       {msg.role === 'assistant' && isLast && !ch.busy && (
                         <div className='msg-actions'>
-                          <button className='icon-btn sm' onClick={(e) => { e.preventDefault(); e.stopPropagation(); void handleRegenerate(); }} title='Regenerate'><RotateCcw size={12} /></button>
+                          <a href='#' className='icon-btn sm' onClick={(e) => { e.preventDefault(); e.stopPropagation(); void handleRegenerate(); return false; }} title='Regenerate'><RotateCcw size={12} /></a>
                         </div>
                       )}
                     </div>

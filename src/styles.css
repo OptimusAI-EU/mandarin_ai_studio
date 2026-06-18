@@ -45,11 +45,13 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 .secondary:hover { background: #2a2a2a; border-color: #666; }
 .primary.sm, .secondary.sm { min-height: 28px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
 .icon-btn { width: 36px; height: 36px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center;
-  padding: 0; border-radius: 50%; color: var(--muted); background: transparent; border: none; flex-shrink: 0; }
+  padding: 0; border-radius: 50%; color: var(--muted); background: transparent; border: none; flex-shrink: 0; cursor: pointer; }
 .icon-btn:hover { color: var(--text); background: #222; transform: none; }
 .icon-btn.rec { color: var(--danger); background: rgba(255,123,111,0.1); }
 .icon-btn.send { color: var(--accent); }
 .icon-btn.send:hover { background: rgba(138,180,248,0.1); }
+.icon-btn.sm { width: 28px; height: 28px; min-height: 28px; }
+.msg-actions { display: flex; gap: 4px; margin-top: 4px; justify-content: flex-end; }
 
 /* === Unified Layout (chat + preview) === */
 .unified-layout { flex: 1; display: flex; min-height: 0; }
