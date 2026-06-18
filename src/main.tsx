@@ -4,7 +4,7 @@ import {
   Download, Film, Image, KeyRound, LayoutGrid, Mic, MicOff, Paperclip, Play,
   RefreshCcw, Send, Settings, Upload, Volume2, Wand2, Box, X, Copy, Code,
   FileText, ExternalLink, Link, Loader2, MessageSquare, Search, ChevronDown,
-  Save, Eye, Plus, Trash2, Square, RotateCcw, Check
+  Save, Eye, Plus, Trash2, Square, RotateCcw, Check, FolderOpen
 } from 'lucide-react';
 import './styles.css';
 
@@ -110,6 +110,7 @@ function App() {
   const [testing, setTesting] = React.useState(false);
   const chatEndRef = React.useRef<HTMLDivElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
+  const folderRef = React.useRef<HTMLInputElement>(null);
 
   // Active chat state
   const ch = getChat(modality);
@@ -144,15 +145,48 @@ function App() {
     for (const item of items) {
       if (item.type.startsWith('image/')) {
         const f = item.getAsFile();
-        if (f) void handleUploadFile(f);
+        if (f) {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = String(reader.result);
+            const newAtt: AttachType = { id: 'paste_' + Date.now(), name: f.name || 'pasted-image', mime_type: f.type, dataUrl };
+            const cur = getChat(modality).attachments;
+            upd({ attachments: [...cur, newAtt], message: 'Pasted: ' + (f.name || 'image') });
+          };
+          reader.readAsDataURL(f);
+        }
       }
     }
-  }, [modality, attachments]);
+  }, [modality]);
 
   React.useEffect(() => {
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
   }, [handlePaste]);
+
+  // File upload handler — reads file locally and adds to attachments immediately
+  const handleFileChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    let processed = 0;
+    const total = files.length;
+    const newAttachments: AttachType[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result);
+        newAttachments.push({ id: 'file_' + Date.now() + '_' + i, name: file.name, mime_type: file.type, dataUrl });
+        processed++;
+        if (processed === total) {
+          const cur = getChat(modality).attachments;
+          upd({ attachments: [...cur, ...newAttachments], message: 'Attached ' + total + ' file(s)' });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = ''; // Reset so same file can be selected again
+  }, [modality]);
 
   // ==================== API Functions ====================
 
@@ -403,12 +437,13 @@ function App() {
                 {ch.showAttachMenu && (
                   <div className='attach-menu'>
                     <button onClick={() => { fileRef.current?.click(); upd({ showAttachMenu: false }); }}><Upload size={14} /><span>Upload File / Image</span></button>
+                    <button onClick={() => { folderRef.current?.click(); upd({ showAttachMenu: false }); }}><FolderOpen size={14} /><span>Upload Folder</span></button>
                     <button onClick={() => { upd({ showUrlInput: true, showAttachMenu: false }); }}><Link size={14} /><span>Attach URL</span></button>
                   </div>
                 )}
               </div>
-              <input ref={fileRef} type='file' multiple accept='image/*,audio/*,video/*,text/*,.pdf,.py,.js,.ts,.json,.md,.txt,.html,.css' style={{ display: 'none' }}
-                onChange={e => { if (e.target.files) { for (let i = 0; i < e.target.files.length; i++) void handleUploadFile(e.target.files[i]); } e.target.value = ''; }} />
+              <input ref={fileRef} type='file' multiple accept='image/*,audio/*,video/*,text/*,.pdf,.py,.js,.ts,.json,.md,.txt,.html,.css' style={{ display: 'none' }} onChange={handleFileChange} />
+              {React.createElement('input', { ref: folderRef, type: 'file', multiple: true, webkitdirectory: '', style: { display: 'none' }, onChange: handleFileChange })}
               <textarea className='chat-input' value={ch.prompt} onChange={e => upd({ prompt: e.target.value })} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }} placeholder={'Message ' + (ch.selectedModel || '...')} rows={1} />
               <button className={'icon-btn mic' + (ch.isRecording ? ' rec' : '')} onClick={() => upd({ isRecording: !getChat(modality).isRecording })} title='Voice'>{ch.isRecording ? <MicOff size={18} /> : <Mic size={18} />}</button>
               {ch.busy ? (
