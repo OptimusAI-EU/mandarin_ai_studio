@@ -1,7 +1,7 @@
 {
-  "name": "open-video-studio",
-  "version": "0.1.0",
-  "description": "A local-first studio for generating and comparing AI videos through OpenRouter video models.",
+  "name": "mandarin-ai-studio",
+  "version": "0.2.0",
+  "description": "A local-first AI creative suite for generating and editing images, video, 3D, and audio through OpenRouter and Ollama.",
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
@@ -14,8 +14,12 @@
   },
   "keywords": [
     "openrouter",
+    "ollama",
+    "image-generation",
     "video-generation",
-    "ai-video",
+    "audio-generation",
+    "3d-generation",
+    "ai-creative-suite",
     "local-first",
     "react",
     "sqlite"
