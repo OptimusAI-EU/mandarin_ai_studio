@@ -1,17 +1,34 @@
-# Open Video Studio
+# Mandarin AI Studio
 
-A local-first studio for generating and comparing AI videos through OpenRouter video models.
+A local-first AI creative suite for generating and editing images, video, 3D, and audio through OpenRouter and Ollama.
 
 ## What Works
 
-- Save an OpenRouter API key locally.
-- Sync video model metadata from OpenRouter.
-- Generate text-to-video jobs.
-- Generate first-frame and start/end-frame jobs when the selected model supports them.
-- Persist jobs, prompts, payloads, model settings, and statuses in SQLite.
-- Poll async jobs and save completed videos to a local output directory.
-- Browse jobs, gallery items, and compare 2-4 completed local videos.
-- Submit controlled batches with up to 3 selected models and up to 3 videos per model.
+- Save an OpenRouter API key locally (stored in `.env` file).
+- Sync all model metadata from OpenRouter, categorized by output modality (text, image, video, audio, 3D, others).
+- **Text/Multimodal**: Chat with LLMs, code generation, translation, and text-based tasks.
+- **Image**: Generate and edit images from text or image prompts.
+- **Video**: Generate videos from text, images, or start/end frames.
+- **Audio**: Text-to-speech, transcription, and voice cloning.
+- **3D**: Generate 3D models and meshes (placeholder for future support).
+- Per-modality chat sessions — conversations are preserved when switching between modules.
+- Session management: create, browse, restore, and delete chat sessions.
+- Artifact management: view, save, and delete generated assets (images, videos, audio, code).
+- File, image, URL, and paste-to-attach support for conversation context.
+- Regenerate responses and stop generation in progress.
+- Search and filter models by modality and keyword.
+- Persist sessions, jobs, artifacts, prompts, and settings in SQLite.
+- Compare outputs across models.
+
+## Modules
+
+| Module | Capabilities |
+|--------|-------------|
+| **Text** | Chat, code generation, translation, multimodal (text+image) models |
+| **Image** | Text-to-image, image-to-image, inpainting, upscaling |
+| **Video** | Text-to-video, image-to-video, start/end frame interpolation |
+| **Audio** | TTS, STT, voice cloning |
+| **3D** | 3D model generation (coming soon) |
 
 ## Run Locally
 
@@ -43,9 +60,10 @@ http://127.0.0.1:5173
 
 Runtime data is stored under `.ovstudio/`:
 
-- `studio.sqlite` for settings, model cache, jobs, and assets
-- `assets/` for uploaded frame images
-- `outputs/` for downloaded videos unless changed in Settings
+- `studio.sqlite` for settings, model cache, sessions, jobs, and assets
+- `assets/` for uploaded files and images
+- `outputs/` for generated media files
+- `artifacts/` for generated assets linked to sessions
 
 The app is designed for local use. Do not host it publicly with a saved API key.
 
@@ -53,22 +71,41 @@ The app is designed for local use. Do not host it publicly with a saved API key.
 
 The local backend exposes:
 
+### Settings
 - `GET /api/settings`
 - `PATCH /api/settings`
 - `POST /api/settings/test`
-- `GET /api/models/video`
-- `POST /api/models/sync`
-- `POST /api/assets/upload`
-- `POST /api/jobs`
-- `POST /api/batches`
-- `GET /api/jobs`
-- `GET /api/jobs/:id`
-- `POST /api/jobs/:id/poll`
-- `POST /api/jobs/:id/download`
-- `POST /api/jobs/:id/retry`
-- `POST /api/jobs/:id/duplicate`
-- `DELETE /api/jobs/:id`
-- `GET /api/gallery`
+
+### Models
+- `GET /api/models` — List all models
+- `GET /api/models/:modality` — List models by modality
+- `POST /api/models/sync` — Sync all models from OpenRouter
+
+### Sessions
+- `GET /api/sessions?modality=...` — List sessions
+- `POST /api/sessions` — Create new session
+- `GET /api/sessions/:id` — Get session with messages
+- `DELETE /api/sessions/:id` — Delete session
+
+### Generation
+- `POST /api/generate/:modality` — Generate content (text/image/video/audio)
+
+### Jobs
+- `GET /api/jobs?modality=...&session_id=...` — List jobs
+- `GET /api/jobs/:id` — Get job details
+- `DELETE /api/jobs/:id` — Delete job
+- `POST /api/jobs/:id/download` — Download job output
+- `GET /api/jobs/:id/content` — Get job content
+
+### Artifacts
+- `GET /api/artifacts` — List all artifacts
+- `GET /api/artifacts/:id` — Get artifact details
+- `GET /api/artifacts/:id/content` — Get artifact file
+- `DELETE /api/artifacts/:id` — Delete artifact
+
+### Assets
+- `POST /api/assets/upload` — Upload file/image
+- `GET /api/assets/:id/content` — Get asset file
 
 ## Notes
 
