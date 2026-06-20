@@ -321,22 +321,49 @@ app.post('/api/generate/:modality', async (req, res, next) => {
     const sid = session.id;
 
     // Append user message
-    const userContent = [];
-    if (body.images && body.images.length > 0) {
+    const hasMedia = (body.images && body.images.length > 0) || (body.videos && body.videos.length > 0) || (body.audios && body.audios.length > 0);
+    let userContent;
+    if (hasMedia) {
+      userContent = [];
       userContent.push({ type: 'text', text: body.prompt });
-      for (const img of body.images) {
-        let imgUrl = img;
-        if (typeof img === 'object' && img.dataUrl) imgUrl = img.dataUrl;
-        else if (typeof img === 'string' && !img.startsWith('http') && !img.startsWith('data:')) {
-          const asset = getAsset(img);
-          if (asset) imgUrl = 'data:' + asset.mime_type + ';base64,' + (asset.data_url || '').split(',')[1];
+      if (body.images) {
+        for (const img of body.images) {
+          let imgUrl = img;
+          if (typeof img === 'object' && img.dataUrl) imgUrl = img.dataUrl;
+          else if (typeof img === 'string' && !img.startsWith('http') && !img.startsWith('data:')) {
+            const asset = getAsset(img);
+            if (asset) imgUrl = 'data:' + asset.mime_type + ';base64,' + (asset.data_url || '').split(',')[1];
+          }
+          userContent.push({ type: 'image_url', image_url: { url: imgUrl } });
         }
-        userContent.push({ type: 'image_url', image_url: { url: imgUrl } });
+      }
+      if (body.videos) {
+        for (const vid of body.videos) {
+          let vidUrl = vid;
+          if (typeof vid === 'object' && vid.dataUrl) vidUrl = vid.dataUrl;
+          else if (typeof vid === 'string' && !vid.startsWith('http') && !vid.startsWith('data:')) {
+            const asset = getAsset(vid);
+            if (asset) vidUrl = 'data:' + asset.mime_type + ';base64,' + (asset.data_url || '').split(',')[1];
+          }
+          userContent.push({ type: 'video_url', video_url: { url: vidUrl } });
+        }
+      }
+      if (body.audios) {
+        for (const aud of body.audios) {
+          let audUrl = aud;
+          if (typeof aud === 'object' && aud.dataUrl) audUrl = aud.dataUrl;
+          else if (typeof aud === 'string' && !aud.startsWith('http') && !aud.startsWith('data:')) {
+            const asset = getAsset(aud);
+            if (asset) audUrl = 'data:' + asset.mime_type + ';base64,' + (asset.data_url || '').split(',')[1];
+          }
+          userContent.push({ type: 'audio_url', audio_url: { url: audUrl } });
+        }
       }
     } else {
-      userContent.push(body.prompt);
+      userContent = body.prompt;
     }
     appendMessage(sid, { role: 'user', content: userContent });
+    session = getSession(sid); // re-fetch to include the newly appended message
 
     const localJob = createJob({
       status: 'submitting', modality, mode: body.mode || 'text',
@@ -350,9 +377,16 @@ app.post('/api/generate/:modality', async (req, res, next) => {
       if (modality === 'text') {
         const messages = session.messages.map(m => {
           if (typeof m.content === 'string') return { role: m.role, content: m.content };
+          if (Array.isArray(m.content)) {
+            if (m.content.length > 0 && typeof m.content[0] === 'string') {
+              return { role: m.role, content: m.content.join('\n') };
+            }
+            return { role: m.role, content: m.content };
+          }
           return m;
         });
-        response = await openrouter.createChatCompletion(requireApiKey(), { model: body.model, messages, max_tokens: body.max_tokens || 4096, temperature: body.temperature || 0.7 });
+        const payload = { model: body.model, messages, max_tokens: body.max_tokens || 4096, temperature: body.temperature || 0.7 };
+        response = await openrouter.createChatCompletion(requireApiKey(), payload);
         result = response;
         contentType = 'text/markdown';
         const assistantMsg = response.choices?.[0]?.message?.content || response.choices?.[0]?.text || '';

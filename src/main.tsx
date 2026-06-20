@@ -111,6 +111,8 @@ function App() {
   const chatEndRef = React.useRef<HTMLDivElement>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const folderRef = React.useRef<HTMLInputElement>(null);
+  const videoRef = React.useRef<HTMLInputElement>(null);
+  const audioRef = React.useRef<HTMLInputElement>(null);
 
   // Active chat state
   const ch = getChat(modality);
@@ -286,7 +288,14 @@ function App() {
 
     try {
       const body: any = { model: getChat(modality).selectedModel, prompt: curPrompt, session_id: session.id };
-      if (curAtt.length > 0) body.images = curAtt;
+      if (curAtt.length > 0) {
+        const images = curAtt.filter(a => a.mime_type.startsWith('image/'));
+        const videos = curAtt.filter(a => a.mime_type.startsWith('video/'));
+        const audios = curAtt.filter(a => a.mime_type.startsWith('audio/'));
+        if (images.length > 0) body.images = images;
+        if (videos.length > 0) body.videos = videos;
+        if (audios.length > 0) body.audios = audios;
+      }
       await api.request<any>('/api/generate/' + modality, { method: 'POST', body: JSON.stringify(body) });
       const updated = await api.request<Session>('/api/sessions/' + session.id);
       setSessions(prev => prev.map(s => s.id === updated.id ? updated : s));
@@ -462,12 +471,16 @@ function App() {
                 {ch.showAttachMenu && (
                   <div className='attach-menu'>
                     <button onClick={() => { fileRef.current?.click(); upd({ showAttachMenu: false }); }}><Upload size={14} /><span>Upload File / Image</span></button>
+                    <button onClick={() => { videoRef.current?.click(); upd({ showAttachMenu: false }); }}><Film size={14} /><span>Upload Video</span></button>
+                    <button onClick={() => { audioRef.current?.click(); upd({ showAttachMenu: false }); }}><Volume2 size={14} /><span>Upload Audio</span></button>
                     <button onClick={() => { folderRef.current?.click(); upd({ showAttachMenu: false }); }}><FolderOpen size={14} /><span>Upload Folder</span></button>
                     <button onClick={() => { upd({ showUrlInput: true, showAttachMenu: false }); }}><Link size={14} /><span>Attach URL</span></button>
                   </div>
                 )}
               </div>
-              <input ref={fileRef} type='file' multiple accept='image/*,audio/*,video/*,text/*,.pdf,.py,.js,.ts,.json,.md,.txt,.html,.css' style={{ display: 'none' }} onChange={handleFileChange} />
+              <input ref={fileRef} type='file' multiple accept='image/*,text/*,.pdf,.py,.js,.ts,.json,.md,.txt,.html,.css' style={{ display: 'none' }} onChange={handleFileChange} />
+              <input ref={videoRef} type='file' multiple accept='video/*' style={{ display: 'none' }} onChange={handleFileChange} />
+              <input ref={audioRef} type='file' multiple accept='audio/*' style={{ display: 'none' }} onChange={handleFileChange} />
               {React.createElement('input', { ref: folderRef, type: 'file', multiple: true, webkitdirectory: '', style: { display: 'none' }, onChange: handleFileChange })}
               <textarea className='chat-input' value={ch.prompt} onChange={e => upd({ prompt: e.target.value })} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend(); } }} placeholder={'Message ' + (ch.selectedModel || '...')} rows={1} />
               <button className={'icon-btn mic' + (ch.isRecording ? ' rec' : '')} onClick={() => upd({ isRecording: !getChat(modality).isRecording })} title='Voice'>{ch.isRecording ? <MicOff size={18} /> : <Mic size={18} />}</button>
